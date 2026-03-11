@@ -1,6 +1,5 @@
 """書誌情報取得サービス。
-第一候補: 楽天ブックスAPI
-第二候補: Google Books API（フォールバック）
+Google Books API を使用して ISBN から書籍情報を取得する。
 """
 
 import requests
@@ -9,63 +8,7 @@ from typing import Optional, Dict, Any
 
 
 def search_by_isbn(isbn: str) -> Optional[Dict[str, Any]]:
-    """ISBN で書誌情報を検索する。楽天 → Google の順で試みる。"""
-    book = _search_rakuten(isbn)
-    if book:
-        return book
-
-    book = _search_google_books(isbn)
-    if book:
-        return book
-
-    return None
-
-
-def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
-    """楽天ブックス API で書籍を検索する。"""
-    try:
-        app_id = st.secrets["rakuten"]["application_id"]
-        url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404"
-        params = {
-            "applicationId": app_id,
-            "isbn": isbn,
-            "formatVersion": 2,
-        }
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        items = data.get("Items", [])
-        if not items:
-            return None
-
-        item = items[0]
-        # 著者を "/" 区切りでリスト化
-        author_raw = item.get("author", "")
-        authors = [a.strip() for a in author_raw.split("/")] if author_raw else []
-
-        # 画像URLを大 → 中 → 小の優先度で取得
-        thumbnail = (
-            item.get("largeImageUrl")
-            or item.get("mediumImageUrl")
-            or item.get("smallImageUrl", "")
-        )
-
-        return {
-            "isbn13": isbn,
-            "title": item.get("title", ""),
-            "authors": authors,
-            "publisher": item.get("publisherName", ""),
-            "thumbnail_url": thumbnail,
-            "category": item.get("booksGenreName", ""),
-            "source": "rakuten",
-        }
-    except Exception:
-        return None
-
-
-def _search_google_books(isbn: str) -> Optional[Dict[str, Any]]:
-    """Google Books API で書籍を検索する。"""
+    """ISBN で Google Books API を検索し、書誌情報を返す。"""
     try:
         api_key = st.secrets.get("google_books", {}).get("api_key", "")
         url = "https://www.googleapis.com/books/v1/volumes"
@@ -83,15 +26,14 @@ def _search_google_books(isbn: str) -> Optional[Dict[str, Any]]:
 
         volume = items[0].get("volumeInfo", {})
         image_links = volume.get("imageLinks", {})
+
+        # できるだけ大きい画像を取得し HTTPS に統一
         thumbnail = (
             image_links.get("thumbnail")
             or image_links.get("smallThumbnail", "")
         )
-        # HTTPS に変換し、より高解像度の画像を取得
         if thumbnail:
-            thumbnail = thumbnail.replace("http://", "https://").replace(
-                "zoom=1", "zoom=0"
-            )
+            thumbnail = thumbnail.replace("http://", "https://").replace("zoom=1", "zoom=0")
 
         return {
             "isbn13": isbn,
@@ -102,5 +44,11 @@ def _search_google_books(isbn: str) -> Optional[Dict[str, Any]]:
             "category": ", ".join(volume.get("categories", [])),
             "source": "google_books",
         }
+    except requests.exceptions.Timeout:
+        st.error("書誌情報の取得がタイムアウトしました。時間をおいて再度お試しください。")
+        return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"書誌情報の取得に失敗しました: {e}")
+        return None
     except Exception:
         return None
