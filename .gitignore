@@ -3,6 +3,10 @@
 *.json
 !package.json
 
+# Claude / 開発内部ドキュメント（アプリ動作不要）
+CLAUDE.md
+docs/
+
 # Python
 __pycache__/
 *.py[cod]
