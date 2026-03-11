@@ -56,7 +56,7 @@ def require_auth() -> Dict[str, Any]:
     認証チェック。未ログインの場合は警告を表示して処理を停止する。
     ログイン済みの場合はユーザー情報を返す。
     """
-    if "user" not in st.session_state or not st.session_state["user"]:
+    if not st.session_state.get("authenticated") or not st.session_state.get("user"):
         st.warning("このページを利用するにはログインが必要です。")
         st.page_link("app.py", label="ログインページへ")
         st.stop()
@@ -64,16 +64,11 @@ def require_auth() -> Dict[str, Any]:
 
 
 def sidebar_user_info() -> None:
-    """サイドバーにユーザー情報とログアウトボタンを表示する。"""
-    user = st.session_state.get("user")
-    if not user:
+    """サイドバーにログアウトボタンを表示する。"""
+    if not st.session_state.get("authenticated"):
         return
     with st.sidebar:
-        name = user.get("displayName") or user.get("email") or "ユーザー"
-        photo = user.get("photoUrl")
-        if photo:
-            st.image(photo, width=40)
-        st.write(f"👤 {name}")
+        st.write("📚 読破本履歴")
         if st.button("ログアウト", key="sidebar_logout"):
-            st.session_state.pop("user", None)
+            st.session_state.clear()
             st.switch_page("app.py")
