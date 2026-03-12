@@ -18,7 +18,10 @@ def search_by_isbn(isbn: str) -> Optional[Dict[str, Any]]:
 def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
     """楽天ブックス API で書籍を検索する。"""
     try:
-        app_id = st.secrets["rakuten"]["application_id"]
+        rakuten_secrets = st.secrets.get("rakuten", {})
+        app_id = rakuten_secrets.get("application_id", "")
+        if not app_id:
+            return None
         url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404"
         params = {
             "applicationId": app_id,
