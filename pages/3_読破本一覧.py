@@ -22,13 +22,36 @@ if not books:
     st.page_link("pages/2_本を登録.py", label="📷 最初の1冊を登録する")
     st.stop()
 
-st.caption(f"全 {len(books)} 冊")
+# ─── 検索フィルター ───────────────────────────────────────────────────────────
+query = st.text_input("🔍 検索（タイトル・著者・コメント）", placeholder="例: 告白、湊かなえ、感動")
+
+if query:
+    q = query.strip().lower()
+    def matches(book):
+        title = (book.get("title") or "").lower()
+        authors = " ".join(book.get("authors") or []).lower()
+        comment = (book.get("comment") or "").lower()
+        return q in title or q in authors or q in comment
+    filtered = [b for b in books if matches(b)]
+else:
+    filtered = books
+
+total = len(books)
+hit = len(filtered)
+if query:
+    st.caption(f"{total} 冊中 {hit} 冊がヒット")
+else:
+    st.caption(f"全 {total} 冊")
+
+if not filtered:
+    st.info("該当する本が見つかりませんでした。")
+    st.stop()
+
 st.write("---")
 
 # ─── 一覧表示（カードレイアウト）─────────────────────────────────────────────
-# スマホ: 1列 / PC: 3列
 COLS = 3
-rows = [books[i : i + COLS] for i in range(0, len(books), COLS)]
+rows = [filtered[i : i + COLS] for i in range(0, len(filtered), COLS)]
 
 for row in rows:
     cols = st.columns(COLS)
