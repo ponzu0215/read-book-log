@@ -23,6 +23,7 @@ def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
     """楽天ブックス API で書籍を検索する。"""
     try:
         app_id = st.secrets.get("rakuten", {}).get("application_id", "")
+        st.info(f"[DEBUG] rakuten app_id = '{app_id[:8]}...' (len={len(app_id)})" if app_id else "[DEBUG] rakuten app_id が空です")
         if not app_id:
             return None
         url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404"
