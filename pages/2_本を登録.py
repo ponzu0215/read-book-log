@@ -73,10 +73,11 @@ if st.session_state.book_info:
     col_img, col_meta = st.columns([1, 3])
     with col_img:
         if book.get("thumbnail_url"):
-            try:
-                st.image(book["thumbnail_url"], width=120)
-            except Exception:
-                st.markdown("🔲 表紙なし")
+            st.markdown(
+                f'<img src="{book["thumbnail_url"]}" style="width:120px;max-height:160px;'
+                f'object-fit:contain;" onerror="this.style.display=\'none\'">',
+                unsafe_allow_html=True,
+            )
         else:
             st.markdown("🔲 表紙なし")
     with col_meta:

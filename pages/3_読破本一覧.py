@@ -64,11 +64,13 @@ for row in rows:
                     'justify-content:center;background:#eee;border-radius:4px;">'
                     '<span style="font-size:48px;">📖</span></div>'
                 )
-                if book.get("thumbnail_url"):
-                    try:
-                        st.image(book["thumbnail_url"], use_container_width=True)
-                    except Exception:
-                        st.markdown(_no_cover, unsafe_allow_html=True)
+                thumb = book.get("thumbnail_url", "")
+                if thumb:
+                    st.markdown(
+                        f'<img src="{thumb}" style="width:100%;max-height:200px;'
+                        f'object-fit:contain;" onerror="this.parentElement.innerHTML=\'📖\'">',
+                        unsafe_allow_html=True,
+                    )
                 else:
                     st.markdown(_no_cover, unsafe_allow_html=True)
 

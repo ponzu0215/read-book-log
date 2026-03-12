@@ -55,13 +55,7 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
 
 
 def _get_cover_ndl(isbn: str) -> str:
-    """国立国会図書館サムネイルAPIから表紙を取得する（APIキー不要）。"""
-    try:
-        url = f"https://ndlsearch.ndl.go.jp/thumbnail/{isbn}.jpg"
-        r = requests.get(url, timeout=5)
-        content_type = r.headers.get("Content-Type", "")
-        if r.status_code == 200 and "image" in content_type and len(r.content) > 2000:
-            return url
-    except Exception:
-        pass
-    return ""
+    """国立国会図書館サムネイルAPIから表紙URLを返す（ブラウザが直接取得）。"""
+    # NDL のサムネイルURL をそのまま返し、ブラウザ側でレンダリングさせる。
+    # st.image() ではなく HTML <img> タグで表示するため、サーバー側の検証は不要。
+    return f"https://ndlsearch.ndl.go.jp/thumbnail/{isbn}.jpg"
