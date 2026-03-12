@@ -45,25 +45,10 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
             if author_raw:
                 authors = [a.strip() for a in author_raw.split("/")]
 
-        # 表紙URL: summary.cover → CDN固定URL(cover.openbd.jp) → ONIX の順で探す
+        # 表紙URL: summary.cover → CDN固定URL(cover.openbd.jp/{isbn}.jpg) の順で探す
         cover = summary.get("cover", "")
         if not cover:
-            cdn_url = f"https://cover.openbd.jp/{isbn}.jpg"
-            try:
-                r = requests.head(cdn_url, timeout=5)
-                if r.status_code == 200:
-                    cover = cdn_url
-            except Exception:
-                pass
-        if not cover:
-            for resource in onix.get("CollateralDetail", {}).get("SupportingResource", []):
-                for version in resource.get("ResourceVersion", []):
-                    link = version.get("ResourceLink", "")
-                    if link:
-                        cover = link
-                        break
-                if cover:
-                    break
+            cover = f"https://cover.openbd.jp/{isbn}.jpg"
         return {
             "isbn13": isbn,
             "title": title,

@@ -73,7 +73,10 @@ if st.session_state.book_info:
     col_img, col_meta = st.columns([1, 3])
     with col_img:
         if book.get("thumbnail_url"):
-            st.image(book["thumbnail_url"], width=120)
+            try:
+                st.image(book["thumbnail_url"], width=120)
+            except Exception:
+                st.markdown("🔲 表紙なし")
         else:
             st.markdown("🔲 表紙なし")
     with col_meta:

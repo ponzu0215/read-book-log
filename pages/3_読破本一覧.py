@@ -59,15 +59,18 @@ for row in rows:
         with col:
             with st.container(border=True):
                 # 表紙
+                _no_cover = (
+                    '<div style="height:160px;display:flex;align-items:center;'
+                    'justify-content:center;background:#eee;border-radius:4px;">'
+                    '<span style="font-size:48px;">📖</span></div>'
+                )
                 if book.get("thumbnail_url"):
-                    st.image(book["thumbnail_url"], use_container_width=True)
+                    try:
+                        st.image(book["thumbnail_url"], use_container_width=True)
+                    except Exception:
+                        st.markdown(_no_cover, unsafe_allow_html=True)
                 else:
-                    st.markdown(
-                        '<div style="height:160px;display:flex;align-items:center;'
-                        'justify-content:center;background:#eee;border-radius:4px;">'
-                        '<span style="font-size:48px;">📖</span></div>',
-                        unsafe_allow_html=True,
-                    )
+                    st.markdown(_no_cover, unsafe_allow_html=True)
 
                 # タイトル
                 title = book.get("title") or "タイトル不明"
