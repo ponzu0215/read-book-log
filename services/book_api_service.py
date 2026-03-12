@@ -54,7 +54,8 @@ def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
             "category": item.get("booksGenreName", ""),
             "source": "rakuten",
         }
-    except Exception:
+    except Exception as e:
+        st.warning(f"[DEBUG] 楽天APIエラー: {e}")
         return None
 
 
@@ -93,5 +94,6 @@ def _search_google_books(isbn: str) -> Optional[Dict[str, Any]]:
             "category": ", ".join(volume.get("categories", [])),
             "source": "google_books",
         }
-    except Exception:
+    except Exception as e:
+        st.warning(f"[DEBUG] Google BooksAPIエラー: {e}")
         return None
