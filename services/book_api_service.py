@@ -36,6 +36,7 @@ def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
         data = response.json()
 
         items = data.get("Items", [])
+        st.info(f"[DEBUG] 楽天API成功 Items件数={len(items)}")
         if not items:
             return None
 
@@ -47,6 +48,7 @@ def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
             or item.get("mediumImageUrl")
             or item.get("smallImageUrl", "")
         )
+        st.info(f"[DEBUG] thumbnail_url = '{thumbnail}'")
 
         return {
             "isbn13": isbn,
