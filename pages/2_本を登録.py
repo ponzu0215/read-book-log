@@ -136,6 +136,7 @@ if st.session_state.book_info:
                 "publisher": book.get("publisher", ""),
                 "thumbnail_url": book.get("thumbnail_url", ""),
                 "category": book.get("category", ""),
+                "description": book.get("description", ""),
                 "rating": int(rating),
                 "comment": comment,
                 "read_at": datetime.combine(read_at, datetime.min.time()),

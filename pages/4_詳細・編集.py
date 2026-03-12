@@ -61,6 +61,13 @@ with col_meta:
     if book.get("category"):
         st.write(f"**カテゴリ:** {book['category']}")
 
+# ─── あらすじ・紹介文 ─────────────────────────────────────────────────────────
+description = book.get("description", "")
+if description:
+    st.write("---")
+    st.subheader("📝 あらすじ・紹介文")
+    st.markdown(description)
+
 st.write("---")
 
 # ─── 現在の評価・コメント表示 ────────────────────────────────────────────────

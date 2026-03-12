@@ -41,6 +41,14 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
         if not cover:
             cover = _get_cover_ndl(isbn)
 
+        # あらすじ・紹介文: ONIX CollateralDetail.TextContent から取得
+        description = ""
+        for tc in onix.get("CollateralDetail", {}).get("TextContent", []):
+            text_type = str(tc.get("TextType", ""))
+            if text_type in ("02", "03"):  # 02=短い説明 03=詳細説明
+                description = tc.get("Text", "")
+                break
+
         return {
             "isbn13": isbn,
             "title": title,
@@ -48,6 +56,7 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
             "publisher": summary.get("publisher", ""),
             "thumbnail_url": cover,
             "category": "",
+            "description": description,
             "source": "openbd",
         }
     except Exception:
