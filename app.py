@@ -4,6 +4,7 @@
 
 import streamlit as st
 from services.auth_service import init_firebase_admin, verify_access_key, get_owner_user
+from components.ui_helpers import apply_book_style
 
 st.set_page_config(
     page_title="読破本履歴",
@@ -11,6 +12,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+apply_book_style()
 
 # Firebase Admin SDK を初期化（Firestore 用）
 try:

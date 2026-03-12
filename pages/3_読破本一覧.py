@@ -23,7 +23,7 @@ if not books:
     st.stop()
 
 # ─── 検索フィルター ───────────────────────────────────────────────────────────
-query = st.text_input("🔍 検索（タイトル・著者・コメント）", placeholder="例: 告白、湊かなえ、感動")
+query = st.text_input("🔍 検索（タイトル・著者・コメント）", placeholder="検索欄")
 
 if query:
     q = query.strip().lower()
