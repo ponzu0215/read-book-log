@@ -45,12 +45,26 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
             if author_raw:
                 authors = [a.strip() for a in author_raw.split("/")]
 
+        # 表紙URL: summary.cover → ONIX SupportingResource の順で探す
+        cover = summary.get("cover", "")
+        if not cover:
+            for resource in (
+                onix.get("CollateralDetail", {}).get("SupportingResource", [])
+            ):
+                for feature in resource.get("ResourceFeature", []):
+                    link = feature.get("ResourceLink", "")
+                    if link:
+                        cover = link
+                        break
+                if cover:
+                    break
+
         return {
             "isbn13": isbn,
             "title": title,
             "authors": authors,
             "publisher": summary.get("publisher", ""),
-            "thumbnail_url": summary.get("cover", ""),
+            "thumbnail_url": cover,
             "category": "",
             "source": "openbd",
         }
