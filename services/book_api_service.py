@@ -1,23 +1,69 @@
 """書誌情報取得サービス。
-OpenBD API を主方式、NDL サムネイルで表紙を補完する。
+楽天ブックス API を主方式、OpenBD API をフォールバックとして使用する。
 """
 
 import requests
+import streamlit as st
 from typing import Optional, Dict, Any
+
+# Streamlit Cloud のアプリURL（楽天 API の Referer ヘッダーに使用）
+_APP_URL = "https://read-book-log-dmtuq2kj8hfnro9sudxtdc.streamlit.app/"
+_HEADERS = {"Referer": _APP_URL}
 
 
 def search_by_isbn(isbn: str) -> Optional[Dict[str, Any]]:
-    """ISBN で書誌情報を検索する。"""
-    book = _search_openbd(isbn)
+    """ISBN で書誌情報を検索する。楽天 → OpenBD の順で試みる。"""
+    book = _search_rakuten(isbn)
     if book:
-        if not book.get("thumbnail_url"):
-            book["thumbnail_url"] = _get_cover_ndl(isbn)
         return book
-    return None
+    return _search_openbd(isbn)
+
+
+def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
+    """楽天ブックス API で書籍を検索する。"""
+    try:
+        app_id = st.secrets.get("rakuten", {}).get("application_id", "")
+        if not app_id:
+            return None
+        url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404"
+        params = {
+            "applicationId": app_id,
+            "isbn": isbn,
+            "formatVersion": 2,
+        }
+        response = requests.get(url, params=params, headers=_HEADERS, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        items = data.get("Items", [])
+        if not items:
+            return None
+
+        item = items[0]
+        author_raw = item.get("author", "")
+        authors = [a.strip() for a in author_raw.split("/")] if author_raw else []
+        thumbnail = (
+            item.get("largeImageUrl")
+            or item.get("mediumImageUrl")
+            or item.get("smallImageUrl", "")
+        )
+
+        return {
+            "isbn13": isbn,
+            "title": item.get("title", ""),
+            "authors": authors,
+            "publisher": item.get("publisherName", ""),
+            "thumbnail_url": thumbnail,
+            "category": item.get("booksGenreName", ""),
+            "source": "rakuten",
+        }
+    except Exception as e:
+        st.warning(f"[DEBUG] 楽天APIエラー: {e}")
+        return None
 
 
 def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
-    """OpenBD API で書籍を検索する（APIキー不要）。"""
+    """OpenBD API で書籍を検索する（APIキー不要・フォールバック）。"""
     try:
         url = f"https://api.openbd.jp/v1/get?isbn={isbn}"
         response = requests.get(url, timeout=10)
@@ -43,6 +89,16 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
                 authors = [a.strip() for a in author_raw.split("/")]
 
         cover = summary.get("cover", "")
+        if not cover:
+            for resource in onix.get("CollateralDetail", {}).get("SupportingResource", []):
+                for version in resource.get("ResourceVersion", []):
+                    link = version.get("ResourceLink", "")
+                    if link:
+                        cover = link
+                        break
+                if cover:
+                    break
+
         return {
             "isbn13": isbn,
             "title": title,
@@ -54,18 +110,3 @@ def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
         }
     except Exception:
         return None
-
-
-def _get_cover_ndl(isbn: str) -> str:
-    """国立国会図書館サムネイルAPIから表紙URLを取得する（APIキー不要）。"""
-    try:
-        url = f"https://ndlsearch.ndl.go.jp/thumbnail/{isbn}.jpg"
-        r = requests.get(url, timeout=5)
-        # NDL は画像がない場合も 200 を返すことがある。
-        # Content-Type が image/* かつ一定サイズ以上であれば有効とみなす。
-        content_type = r.headers.get("Content-Type", "")
-        if r.status_code == 200 and "image" in content_type and len(r.content) > 2000:
-            return url
-    except Exception:
-        pass
-    return ""
