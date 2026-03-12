@@ -87,7 +87,8 @@ if st.session_state.book_info:
         st.write(f"**ISBN:** {book.get('isbn13', '')}")
         if book.get("category"):
             st.write(f"**カテゴリ:** {book.get('category')}")
-        source = "楽天ブックス" if book.get("source") == "rakuten" else "Google Books"
+        source_map = {"openbd": "OpenBD", "google_books": "Google Books", "rakuten": "楽天ブックス"}
+        source = source_map.get(book.get("source", ""), "不明")
         st.caption(f"情報ソース: {source}")
 
     st.write("---")

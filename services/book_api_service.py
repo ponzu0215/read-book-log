@@ -1,5 +1,5 @@
 """書誌情報取得サービス。
-楽天ブックス API を主方式、Google Books API をフォールバックとして使用する。
+OpenBD API を主方式、Google Books API をフォールバックとして使用する。
 """
 
 import requests
@@ -8,54 +8,54 @@ from typing import Optional, Dict, Any
 
 
 def search_by_isbn(isbn: str) -> Optional[Dict[str, Any]]:
-    """ISBN で書誌情報を検索する。楽天 → Google Books の順で試みる。"""
-    book = _search_rakuten(isbn)
+    """ISBN で書誌情報を検索する。OpenBD → Google Books の順で試みる。"""
+    book = _search_openbd(isbn)
     if book:
         return book
     return _search_google_books(isbn)
 
 
-def _search_rakuten(isbn: str) -> Optional[Dict[str, Any]]:
-    """楽天ブックス API で書籍を検索する。"""
+def _search_openbd(isbn: str) -> Optional[Dict[str, Any]]:
+    """OpenBD API で書籍を検索する（APIキー不要）。"""
     try:
-        rakuten_secrets = st.secrets.get("rakuten", {})
-        app_id = rakuten_secrets.get("application_id", "")
-        if not app_id:
-            return None
-        url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404"
-        params = {
-            "applicationId": app_id,
-            "isbn": isbn,
-            "formatVersion": 2,
-        }
-        response = requests.get(url, params=params, timeout=10)
+        url = f"https://api.openbd.jp/v1/get?isbn={isbn}"
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
 
-        items = data.get("Items", [])
-        if not items:
+        if not data or data[0] is None:
             return None
 
-        item = items[0]
-        author_raw = item.get("author", "")
-        authors = [a.strip() for a in author_raw.split("/")] if author_raw else []
-        thumbnail = (
-            item.get("largeImageUrl")
-            or item.get("mediumImageUrl")
-            or item.get("smallImageUrl", "")
+        item = data[0]
+        summary = item.get("summary", {})
+        onix = item.get("onix", {})
+
+        title = summary.get("title", "")
+        authors = []
+        contributors = (
+            onix.get("DescriptiveDetail", {}).get("Contributor", [])
         )
+        for c in contributors:
+            name = c.get("PersonName", {}).get("content", "")
+            if name:
+                authors.append(name)
+
+        if not authors:
+            author_raw = summary.get("author", "")
+            if author_raw:
+                authors = [a.strip() for a in author_raw.split("/")]
 
         return {
             "isbn13": isbn,
-            "title": item.get("title", ""),
+            "title": title,
             "authors": authors,
-            "publisher": item.get("publisherName", ""),
-            "thumbnail_url": thumbnail,
-            "category": item.get("booksGenreName", ""),
-            "source": "rakuten",
+            "publisher": summary.get("publisher", ""),
+            "thumbnail_url": summary.get("cover", ""),
+            "category": "",
+            "source": "openbd",
         }
     except Exception as e:
-        st.warning(f"[DEBUG] 楽天APIエラー: {e}")
+        st.warning(f"[DEBUG] OpenBDエラー: {e}")
         return None
 
 
